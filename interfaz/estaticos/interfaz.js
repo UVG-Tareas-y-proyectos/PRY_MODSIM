@@ -65,7 +65,7 @@
       $('generacion').textContent = generacion === null || generacion === undefined ? '—' : formato(generacion, 0);
       const optimo = referencia();
       $('error').textContent = optimo !== null && optimo !== undefined && distancia !== null
-        ? `${formato(optimo === 0 ? 0 : Math.max(0, (distancia - optimo) / optimo * 100), 2)} %` : '—';
+        ? (optimo === 0 && distancia !== 0 ? '—' : `${formato(optimo === 0 ? 0 : Math.max(0, (distancia - optimo) / optimo * 100), 2)} %`) : '—';
     }
     function limpiar() {
       detenerReproduccion(); estado.informe = null; estado.corrida = null; estado.ruta = null;
@@ -256,6 +256,7 @@
     }
     async function actualizarHistorial() {
       const trabajos = await api('/api/historial'); const selector = $('historial'); selector.replaceChildren();
+      agregarOpcion(selector, '', 'Selecciona una ejecución');
       trabajos.forEach((trabajo, i) => agregarOpcion(selector, trabajo.id, `${trabajo.escenario} / ${trabajo.metodo.toUpperCase()} / ${trabajos.length - i}`));
       if (estado.trabajo) selector.value = estado.trabajo;
       selector.parentElement.hidden = !trabajos.length;
@@ -285,9 +286,17 @@
     $('descargar-comparacion').addEventListener('click', () => descargar('comparacion_total.csv'));
     $('descargar-todo').addEventListener('click', () => descargar('resultados.zip'));
     $('historial').addEventListener('change', async () => {
-      if (estado.activo) return;
+      if (estado.activo || !$('historial').value) return;
       estado.trabajo = $('historial').value;
-      try {await cargarResultados(); cambiarEstado('Ejecución guardada', 'Resultados de esta sesión');}
+      try {
+        const trabajo = await api(`/api/ejecuciones/${estado.trabajo}`);
+        if (trabajo.estado === 'ejecutando') {
+          if (trabajo.instancia) mostrarInstancia(trabajo.instancia);
+          limpiar(); bloquear(true); consultar();
+        } else {
+          await cargarResultados(); cambiarEstado('Ejecución guardada', 'Resultados de esta sesión');
+        }
+      }
       catch (e) {error(e.message);}
     });
     $('cargar').addEventListener('click', () => $('archivo').click());
