@@ -84,7 +84,7 @@ def leer_cota(texto):
     return max(valores) if valores else None
 
 
-def resolver_lp(instancia, carpeta, limite=120):
+def resolver_lp(instancia, carpeta, limite=120, progreso=None, cancelar=None):
     if not math.isfinite(limite) or limite <= 0:
         raise ValueError("El límite del modelo debe ser positivo y finito.")
     pulp = importar_pulp()
@@ -103,7 +103,18 @@ def resolver_lp(instancia, carpeta, limite=120):
     cota, optima, vueltas, cortes = None, False, 0, set()
     estado, estados = "limite_tiempo", []
 
+    def informar():
+        if progreso:
+            progreso({"etapa": "lp", "ruta": mejor.copy(), "mejor": mejor_distancia,
+                      "cota_inferior": cota, "variables": len(variables),
+                      "restricciones": len(modelo.constraints), "cortes": len(cortes),
+                      "estado": estado, "origen": origen, "optima_demostrada": optima})
+
+    informar()
+
     while perf_counter() - inicio < limite:
+        if cancelar and cancelar():
+            raise InterruptedError("Ejecución detenida.")
         restantes = limite - (perf_counter() - inicio)
         if restantes <= 0:
             break
@@ -133,6 +144,7 @@ def resolver_lp(instancia, carpeta, limite=120):
         factible = modelo.sol_status in (pulp.LpSolutionOptimal, pulp.LpSolutionIntegerFeasible)
         if not factible:
             estado = "sin_solucion_del_solver"
+            informar()
             break
         elegidas = [arista for arista, x in variables.items() if x.value() is not None and x.value() > 0.5]
         grados = [0] * instancia.cantidad
@@ -141,6 +153,7 @@ def resolver_lp(instancia, carpeta, limite=120):
             grados[j] += 1
         if any(grado != 2 for grado in grados):
             estado = "sin_recorrido_valido"
+            informar()
             break
         ruta = reconstruir_ruta(instancia.cantidad, elegidas)
         if ruta is not None:
@@ -151,6 +164,7 @@ def resolver_lp(instancia, carpeta, limite=120):
                 optima, estado, cota = True, "optima", costo
             else:
                 estado = "factible_sin_prueba"
+            informar()
             break
 
         agregados = 0
@@ -163,7 +177,12 @@ def resolver_lp(instancia, carpeta, limite=120):
             agregados += 1
         if not agregados:
             estado = "sin_recorrido_valido"
+            informar()
             break
+        informar()
+
+    if cancelar and cancelar():
+        raise InterruptedError("Ejecución detenida.")
 
     tiempo = perf_counter() - inicio
     modelo.writeLP(str(carpeta / "modelo.lp"))

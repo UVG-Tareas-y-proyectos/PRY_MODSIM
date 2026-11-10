@@ -70,7 +70,7 @@ def seleccionar(poblacion, config, rng):
     return poblacion[min(rng.sample(range(len(poblacion)), config.torneo))]
 
 
-def resolver_ga(instancia, config, semilla):
+def resolver_ga(instancia, config, semilla, progreso=None, cancelar=None):
     config.validar()
     inicio = perf_counter()
     rng = random.Random(semilla)
@@ -85,6 +85,8 @@ def resolver_ga(instancia, config, semilla):
     historial, instantaneas, mejores = [], [], {}
 
     for generacion in range(config.iteraciones + 1):
+        if cancelar and cancelar():
+            raise InterruptedError("Ejecución detenida.")
         evaluados = sorted((distancia_total(ruta, matriz), ruta) for ruta in poblacion)
         poblacion = [ruta for _, ruta in evaluados]
         costos = [costo for costo, _ in evaluados]
@@ -102,6 +104,10 @@ def resolver_ga(instancia, config, semilla):
                 del mejores[peor]
         if generacion % max(1, config.iteraciones // 40) == 0 or generacion == config.iteraciones:
             instantaneas.append({"generacion": generacion, "ruta": poblacion[0].copy(), "distancia": costos[0]})
+        if progreso and (generacion % max(1, config.iteraciones // 100) == 0 or generacion == config.iteraciones):
+            progreso({"etapa": "ga", "semilla": semilla, "generacion": generacion,
+                      "iteraciones": config.iteraciones, "ruta": poblacion[0].copy(),
+                      **historial[-1]})
         if generacion == config.iteraciones:
             break
         nueva = [ruta.copy() for ruta in poblacion[:n_sobrev]]

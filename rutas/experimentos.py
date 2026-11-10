@@ -73,19 +73,20 @@ def construir_tabla(instancia, config, corridas, lp):
 
 
 def ejecutar_experimento(instancia, config, semillas, metodo, carpeta,
-                        limite_lp=120, graficas=True, animacion=True):
+                        limite_lp=120, graficas=True, animacion=True,
+                        progreso=None, cancelar=None):
     carpeta.mkdir(parents=True, exist_ok=True)
     corridas, lp = [], None
     if metodo in {"ga", "ambos"}:
         for semilla in semillas:
             print(f"  GA: semilla {semilla}", flush=True)
-            corrida = resolver_ga(instancia, config, semilla)
+            corrida = resolver_ga(instancia, config, semilla, progreso, cancelar)
             corridas.append(corrida)
             guardar_json(carpeta / f"ga_{semilla}.json", corrida)
             print(f"    Distancia: {corrida['distancia']:.3f} | {corrida['tiempo_s']:.2f} s", flush=True)
     if metodo in {"lp", "ambos"}:
         print(f"  LP: límite {limite_lp:g} s", flush=True)
-        lp = resolver_lp(instancia, carpeta / "lp", limite_lp)
+        lp = resolver_lp(instancia, carpeta / "lp", limite_lp, progreso, cancelar)
         guardar_json(carpeta / "lp.json", lp)
         print(f"    Distancia: {lp['distancia']:.3f} | Estado: {lp['estado']}", flush=True)
     tabla, referencia = construir_tabla(instancia, config, corridas, lp)
@@ -119,6 +120,8 @@ def ejecutar_experimento(instancia, config, semillas, metodo, carpeta,
                                 "paso": paso, "ciudad": instancia.ciudades[ciudad]})
     guardar_csv(carpeta / "rutas.csv", filas_rutas)
     if graficas:
+        if progreso:
+            progreso({"etapa": "exportando", "mensaje": "Guardando gráficas y resultados"})
         guardar_graficas(instancia, corridas, lp, carpeta, referencia)
     if animacion and corridas:
         mejor = min(corridas, key=lambda resultado: resultado["distancia"])
