@@ -1,0 +1,51 @@
+<div id="traza-app">
+  <header class="cabecera">
+    <a class="marca" href="/" aria-label="TRAZA, inicio">TRAZA<span>LABORATORIO DE RUTAS</span></a>
+    <div class="cabecera-derecha"><span class="curso">UVG / Modelación y Simulación</span><button id="tema" class="boton-texto" type="button">Tema oscuro</button></div>
+  </header>
+  <div class="estructura">
+    <aside class="configuracion">
+      <div class="encabezado-seccion"><span>01 / PREPARAR</span><span>TSP</span></div>
+      <h1>Tu experimento.</h1>
+      <p class="texto-secundario">Elige las ciudades y cómo buscar el recorrido.</p>
+      <form id="formulario">
+        <label for="escenario">Escenario</label>
+        <select id="escenario"><option value="demo">Prueba / 10 ciudades</option><option value="eil101">eil101 / 101 ciudades</option><option value="gr229">gr229 / 229 ciudades</option><option value="propio">Cuatro barrios / 80 ciudades</option><option value="todos">Los tres escenarios del curso</option></select>
+        <div class="acciones-datos"><button id="cargar" class="boton-texto" type="button">Cargar archivo ↗</button><button id="crear" class="boton-texto" type="button">Crear escenario +</button></div>
+        <input id="archivo" type="file" accept=".csv,.tsp" hidden>
+        <label for="metodo">Método</label>
+        <select id="metodo"><option value="ga">Algoritmo genético</option><option value="ambos">Genético + programación entera</option><option value="lp">Programación entera</option></select>
+        <div id="parametros-ga">
+          <div class="dos-columnas"><div><label for="poblacion">Población</label><input id="poblacion" type="number" value="150" min="4" max="5000" step="1" required></div><div><label for="iteraciones">Generaciones</label><input id="iteraciones" type="number" value="500" min="1" max="100000" step="1" required></div></div>
+          <label for="seleccion">Selección</label><select id="seleccion"><option value="torneo">Torneo</option><option value="ranking">Ranking</option><option value="elitismo">Elitismo</option><option value="mezcla">Mezcla</option></select>
+          <label for="semillas">Semillas de las repeticiones</label><input id="semillas" type="text" value="11, 22, 33" required aria-describedby="ayuda-semillas"><small id="ayuda-semillas">Enteros distintos separados por coma.</small>
+          <details class="ajustes"><summary>Ajustes de evolución</summary><p class="nota">Las tres proporciones deben sumar 100 %.</p><div class="tres-columnas"><div><label for="sobrevivientes">Élite %</label><input id="sobrevivientes" type="number" value="10" min="0" max="100" step="0.1"></div><div><label for="cruce">Cruce %</label><input id="cruce" type="number" value="70" min="0" max="100" step="0.1"></div><div><label for="mutacion">Mutación %</label><input id="mutacion" type="number" value="20" min="0" max="100" step="0.1"></div></div><label for="torneo">Tamaño del torneo</label><input id="torneo" type="number" value="3" min="2" step="1"><label for="inicializacion">Población inicial</label><select id="inicializacion"><option value="mixta">Mixta: 20 % vecino cercano</option><option value="aleatoria">Completamente aleatoria</option></select><label for="mejora-local">Cambios 2-opt por hijo</label><input id="mejora-local" type="number" value="0" min="0" step="1"><small>0 mantiene el GA sin mejora local.</small></details>
+        </div>
+        <div id="parametros-lp" hidden><label for="limite-lp">Límite del modelo (segundos)</label><input id="limite-lp" type="number" value="120" min="1" step="1"><p class="nota">Al detener, la resolución en curso puede continuar hasta este límite.</p></div>
+        <details class="ajustes"><summary>Archivos de salida</summary><label class="casilla"><input id="exportar-graficas" type="checkbox" checked> Guardar gráficas PNG</label><label class="casilla"><input id="exportar-gif" type="checkbox"> Guardar animación GIF</label></details>
+        <div id="error-formulario" class="mensaje-error" role="alert" hidden></div>
+        <button id="ejecutar" class="boton-principal" type="submit">Ejecutar experimento <span aria-hidden="true">→</span></button>
+        <button id="detener" class="boton-secundario ancho-completo" type="button" hidden>Detener ejecución</button>
+      </form>
+      <div class="pie-configuracion"><span class="punto"></span> Cálculo local · semillas reproducibles</div>
+    </aside>
+    <main class="principal">
+      <div class="titulo-principal"><div><p class="etiqueta">02 / OBSERVAR Y COMPARAR</p><h2 id="nombre-escenario">Prueba de diez ciudades</h2><p id="descripcion-escenario" class="texto-secundario">Un recorrido cerrado. Todas las ciudades, una vez.</p></div><div class="estado-contenedor"><span id="estado" class="estado">Preparado</span><span id="detalle-estado" class="nota">Configura tu primera ejecución</span></div></div>
+      <div class="barra-contexto"><span id="contexto">10 ciudades / distancia euclidiana</span><label class="etiqueta-historial" for="historial" hidden>Revisar ejecución <select id="historial"><option value="">Sesión actual</option></select></label></div>
+      <nav class="pestanas" aria-label="Vistas del laboratorio" role="tablist"><button id="tab-simulacion" type="button" role="tab" aria-controls="vista-simulacion" aria-selected="true">Simulación</button><button id="tab-comparacion" type="button" role="tab" aria-controls="vista-comparacion" aria-selected="false">Comparación</button><button id="tab-archivos" type="button" role="tab" aria-controls="vista-archivos" aria-selected="false">Archivos</button></nav>
+      <section id="vista-simulacion" role="tabpanel" aria-labelledby="tab-simulacion">
+        <div class="metricas"><div><span>Distancia del recorrido</span><strong id="distancia">—</strong></div><div><span id="etiqueta-generacion">Generación</span><strong id="generacion">—</strong></div><div><span>Error frente al óptimo</span><strong id="error">—</strong></div></div>
+        <div class="cabecera-grafica"><span id="rotulo-ruta">CIUDADES DEL ESCENARIO</span><label for="corrida" class="selector-corrida" hidden>Ver recorrido <select id="corrida"></select></label></div>
+        <div id="grafica-ruta" class="grafica-ruta" role="img" aria-label="Ciudades y recorrido del problema TSP"></div>
+        <div class="pie-ruta"><div class="leyenda"><span><i class="muestra-ciudad"></i> Ciudades</span><span><i class="muestra-ga"></i> GA</span><span><i class="muestra-lp"></i> Modelo entero</span></div><span id="estado-modelo">Sin ejecución todavía</span></div>
+        <div class="reproduccion"><button id="reproducir" class="boton-secundario" type="button" disabled>Reproducir</button><label class="solo-lector" for="fotograma">Generación de la ruta</label><input id="fotograma" type="range" min="0" max="0" value="0" disabled><span id="posicion-reproduccion">Sin recorrido guardado</span></div>
+        <div class="cabecera-convergencia"><h3>Una generación más cerca.</h3><span class="nota">Distancia de la mejor ruta por generación</span></div><div id="grafica-convergencia" class="grafica-convergencia" role="img" aria-label="Convergencia del algoritmo genético"></div>
+      </section>
+      <section id="vista-comparacion" role="tabpanel" aria-labelledby="tab-comparacion" hidden><div class="encabezado-resultados"><h3>Los métodos, frente a frente.</h3><button id="descargar-comparacion" class="boton-secundario" type="button" disabled>Descargar CSV</button></div><p id="referencia-comparacion" class="nota">La tabla aparecerá al finalizar una ejecución.</p><div class="tabla-contenedor"><table><thead><tr><th>Escenario / solución</th><th>Distancia</th><th>Tiempo</th><th>Error</th><th>Estado</th></tr></thead><tbody id="filas-comparacion"><tr><td colspan="5" class="vacio">Todavía no hay resultados. Empieza con el escenario de prueba.</td></tr></tbody></table></div><div id="detalle-modelo" class="detalle-modelo"></div></section>
+      <section id="vista-archivos" role="tabpanel" aria-labelledby="tab-archivos" hidden><div class="encabezado-resultados"><h3>Tu experimento, guardado.</h3><button id="descargar-todo" class="boton-secundario" type="button" disabled>Descargar todo .zip</button></div><p class="nota">Parámetros, rutas, estadísticas y archivos para revisar la ejecución.</p><div id="lista-archivos" class="lista-archivos"><p class="vacio">Aquí aparecerán los archivos generados.</p></div></section>
+      <footer class="pie-principal"><span>Problema del viajante / TSP</span><span id="pie-referencia">Los óptimos se muestran únicamente con una referencia válida.</span></footer>
+      <div id="avisos" role="status" aria-live="polite"></div>
+    </main>
+  </div>
+  <dialog id="dialogo-generar"><form id="formulario-generar"><p class="etiqueta">ESCENARIO PROPIO</p><h2>Cuatro barrios, tu recorrido.</h2><p class="texto-secundario">Distribuye las ciudades en cuatro zonas ficticias.</p><label for="ciudades-nuevas">Número de ciudades</label><input id="ciudades-nuevas" type="number" value="80" min="50" max="200" step="1" required><label for="semilla-nueva">Semilla del escenario</label><input id="semilla-nueva" type="number" value="2026" step="1" required><div id="error-generar" class="mensaje-error" role="alert" hidden></div><div class="acciones-dialogo"><button id="cerrar-dialogo" class="boton-secundario" type="button">Volver</button><button class="boton-principal" type="submit">Crear escenario</button></div></form></dialog>
+</div>

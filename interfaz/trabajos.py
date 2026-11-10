@@ -20,6 +20,9 @@ def validar_solicitud(solicitud):
     for campo in ["poblacion", "iteraciones", "torneo", "mejora_local"]:
         if type(getattr(config, campo)) is not int:
             raise ValueError(f"{campo} debe ser un número entero.")
+    for campo in ["sobrevivientes", "cruce", "mutacion"]:
+        if type(getattr(config, campo)) not in {int, float}:
+            raise ValueError(f"{campo} debe ser un número.")
     config.validar()
     semillas = solicitud.get("semillas", [11, 22, 33])
     if not isinstance(semillas, list) or not semillas or len(semillas) > 20:
@@ -118,6 +121,8 @@ class Trabajo:
                 self.mensaje = evento.get("mensaje", "Experimento terminado")
         if not self.proceso.is_alive() and self.proceso.exitcode not in {None, 0} and self.estado == "ejecutando":
             self.estado, self.mensaje = "error", "El proceso terminó inesperadamente. Revise la terminal."
+        if not self.proceso.is_alive():
+            self.proceso.join(timeout=0)
         return {"id": self.id, "estado": self.estado, "mensaje": self.mensaje,
                 "instancia": self.instancia, "ultimo": self.ultimo, "eventos": eventos}
 
