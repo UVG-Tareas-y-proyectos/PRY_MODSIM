@@ -2,6 +2,39 @@
 
 Proyecto de Modelación y Simulación. Requiere Python 3.10 o superior.
 
+## Interfaz TRAZA
+
+Desde esta carpeta:
+
+```bash
+python -m pip install -r requirements-ui.txt
+python app.py
+```
+
+Abrir http://127.0.0.1:8080 en el navegador. Puede cambiarse el puerto con
+`python app.py --puerto 8081`. La interfaz se sirve únicamente en el equipo local.
+
+TRAZA reúne selección de escenarios, parámetros, evolución del GA, reproducción
+por generaciones, comparación GA/LP y descargas. Los botones ejecutan los mismos
+algoritmos de la consola. Las gráficas no usan datos de demostración inventados.
+Incluye tema claro/oscuro y una disposición que se adapta a pantallas pequeñas.
+
+La interfaz usa NiceGUI para servir la página y las operaciones de Python. La
+vista se divide en HTML, CSS y JavaScript propios; Plotly se sirve desde su
+paquete instalado, sin cargarlo desde un CDN. Hay una alternativa SVG mientras
+la biblioteca carga. Los cálculos se ejecutan en otro proceso y la página
+consulta su progreso.
+
+`Reproducir` recorre las instantáneas guardadas; `Detener ejecución` solicita
+detener el cálculo. El GA comprueba esa solicitud entre generaciones. En LP se
+atiende al finalizar la resolución CBC en curso, que puede tardar hasta el límite
+configurado. El historial del selector corresponde a la sesión del servidor;
+los archivos de todas las ejecuciones permanecen en `resultados/interfaz/`.
+
+La carga admite `.csv` y `.tsp` de hasta 2 MB. El escenario creado desde la
+interfaz se guarda como una copia; no modifica los datos originales del curso.
+Se pueden descargar archivos individuales o todos los resultados como ZIP.
+
 ## Ejecución
 
 Desde esta carpeta, crear y activar un entorno virtual si se desea. Luego:
@@ -35,9 +68,15 @@ El GA puede ejecutarse sin PuLP con `--metodo ga`.
 | `rutas/experimentos.py` | Repeticiones, estadísticas y exportación |
 | `rutas/graficas.py` | Rutas, convergencia y animación |
 | `tests/` | Pruebas con unittest |
+| `app.py` | Inicio de la interfaz local |
+| `interfaz/servidor.py` | Página NiceGUI y operaciones HTTP |
+| `interfaz/servicio.py` | Escenarios, cargas y resultados |
+| `interfaz/trabajos.py` | Procesos de cálculo y mensajes de progreso |
+| `interfaz/estaticos/` | Vista, estilos y comportamiento de la interfaz |
 
-El paquete se ejecuta directamente, sin instalar el proyecto, herencia o capas
-de servicios. Las únicas clases de datos son la instancia y la configuración GA.
+El paquete se ejecuta directamente, sin instalar el proyecto. Los algoritmos
+usan funciones y dos clases de datos. La interfaz añade dos clases pequeñas
+para organizar los trabajos y los archivos, sin herencia ni base de datos.
 
 ## Escenarios incluidos
 
@@ -147,6 +186,31 @@ python -m unittest discover -s tests -v
 
 Las pruebas LP se omiten si faltan PuLP/CBC. El recorrido óptimo en `tests/fixtures/`
 se usa únicamente para validar distancias, nunca como entrada a los algoritmos.
+
+Las pruebas de interfaz incluyen procesos reales, cancelación, carga y exportación.
+La prueba de navegador necesita Node y Playwright con Chromium instalado:
+Node solo se utiliza en esa prueba opcional, no para ejecutar la aplicación.
+
+```bash
+npm install --no-save playwright
+npx playwright install chromium
+python -m tests.servidor_navegador --salida resultados/pruebas_web
+```
+
+Con ese servidor abierto, ejecutar en otra terminal:
+
+```bash
+node tests/navegador.cjs
+```
+
+Ese servidor solo adapta las operaciones del laboratorio para pruebas sin NiceGUI.
+El punto de entrada de uso normal sigue siendo `python app.py`. La prueba web
+también acepta `TRAZA_URL=http://127.0.0.1:8080` para probar el servidor real.
+
+En el entorno de desarrollo se comprobaron el núcleo, los procesos de cálculo y
+la sintaxis del cliente. La instalación de NiceGUI/PuLP y la descarga de Chromium
+estuvieron bloqueadas por la red; queda pendiente validar el arranque de NiceGUI,
+el solver CBC y la prueba visual de navegador con esas dependencias disponibles.
 
 ## Referencias de implementación
 
